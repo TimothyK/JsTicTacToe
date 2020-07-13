@@ -8,10 +8,12 @@ class UI {
     static clearBoard() {
         this.cells.forEach(function(cell) {
             cell.innerHTML = '&nbsp;';
+            cell.classList.add('open-cell');
         })
     }
 
     static markCell(cell, player) {
+        cell.classList.remove('open-cell');
         cell.innerText = player.token;
     }
 
@@ -56,14 +58,13 @@ class Game {
 
 
 function loadEventListeners() {
-    document.querySelectorAll('td').forEach(function(cell) {
-        cell.addEventListener('click', select);
-    })
-
+    document.getElementById('board').addEventListener('click', select);
 }
 
 function select(e) {    
-    Game.selectCell(e.target);
+    if (e.target.classList.contains('open-cell')){
+        Game.selectCell(e.target);
+    }
 }
 
 Game.startGame();

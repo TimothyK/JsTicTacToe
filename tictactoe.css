@@ -16,10 +16,11 @@ table {
 td { 
     border: 3px solid black;
     padding: 15px;
-    margin: 0px;        
+    margin: 0px;   
+    min-width: 50px;
 }
-td:hover {
-    background-color: gray;
+.open-cell:hover {
+    background-color: #0066ff;
 }
 td.col1 {
     border-left: 0px;
