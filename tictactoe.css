@@ -22,6 +22,16 @@ td {
 .open-cell:hover {
     background-color: #0066ff;
 }
+.winning-cell {
+    background-color: #ddffcc;
+    animation-name: winner-flash;
+    animation-duration: 2s;
+    animation-iteration-count: 10;
+}
+@keyframes winner-flash {
+    from {background-color: white;}
+    to {background-color: #ddffcc;}
+}
 td.col1 {
     border-left: 0px;
 }
