@@ -3,12 +3,13 @@ loadEventListeners();
 
 class UI {
 
-    static cells = Array.from(document.querySelectorAll('td'));
+    static cells = Array.from(document.getElementById('board').querySelectorAll('td'));
 
     static clearBoard() {
         this.cells.forEach(function(cell) {
             cell.innerHTML = '&nbsp;';
             cell.classList.add('open-cell');
+            cell.classList.remove('winning-cell');
         })
     }
 
@@ -19,12 +20,34 @@ class UI {
 
     static reportDraw() {
         UI.setInstruction('The game is a draw');
+        UI.incrementScore('draw');
+        UI.showPlayAgain();
     }
 
     static reportWinner(winningLine) {
         winningLine.cells.forEach(cell => cell.classList.add('winning-cell'));
         this.cells.forEach(cell => cell.classList.remove('open-cell'));
         UI.setInstruction('Player ' + winningLine.winningPlayerToken() + ' won.');
+        UI.incrementScore(winningLine.winningPlayerToken());
+        UI.showPlayAgain();
+    }
+
+    static incrementScore(idSuffix) {
+        const id = 'score-' + idSuffix.toLowerCase();
+        const scoreBox = document
+            .getElementById(id);
+        let value = parseInt(scoreBox.innerText);
+        scoreBox.innerText = value + 1;   
+    }
+
+    static showPlayAgain() {
+        const btn = document.getElementById('btnPlayAgain');
+        btn.style.display = "inline";
+        btn.focus();
+    }
+    static hidePlayAgain() {
+        const btn = document.getElementById('btnPlayAgain');
+        btn.style.display = "none";
     }
 
     static setInstruction(message) {
@@ -67,7 +90,9 @@ class Game {
     static playerO = new Player('O');
 
     static startGame() {
+        UI.hidePlayAgain();
         UI.clearBoard();
+        this.switchPlayer();
         this.switchPlayer();
     }
 
@@ -82,7 +107,7 @@ class Game {
         new Line([document.getElementById('cell1'), document.getElementById('cell5'), document.getElementById('cell9')])
     ]
 
-    static currentPlayer;
+    static currentPlayer = this.playerX;
 
     static selectCell(cell) {
         UI.markCell(cell, this.currentPlayer);  
@@ -110,10 +135,10 @@ class Game {
     }
 
     static switchPlayer() {
-        if (this.currentPlayer === this.playerO)
-            this.currentPlayer = this.playerX;
-        else
+        if (this.currentPlayer === this.playerX)
             this.currentPlayer = this.playerO;
+        else
+            this.currentPlayer = this.playerX;
 
         UI.setInstruction("It is player " + this.currentPlayer.token + "'s turn.");
     }
@@ -125,12 +150,17 @@ class Game {
 
 function loadEventListeners() {
     document.getElementById('board').addEventListener('click', select);
+    document.getElementById('btnPlayAgain').addEventListener('click', playAgain);
 }
 
 function select(e) {    
     if (e.target.classList.contains('open-cell')){
         Game.selectCell(e.target);
     }
+}
+
+function playAgain() {
+    Game.startGame();
 }
 
 Game.startGame();

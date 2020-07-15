@@ -5,15 +5,13 @@ body {
     margin-left: auto;
     margin-right: auto;
     width: 25%;
-}
-table {
     border-collapse: collapse;
     text-align: center;
     vertical-align: middle;
     font-weight: bolder;
     font-size: xx-large;
 }
-td { 
+#board td { 
     border: 3px solid black;
     padding: 15px;
     margin: 0px;   
@@ -32,15 +30,23 @@ td {
     from {background-color: white;}
     to {background-color: #ddffcc;}
 }
-td.col1 {
+#board td.col1 {
     border-left: 0px;
 }
-td.col3 {
+#board td.col3 {
     border-right: 0px;
 }
-td.row1 {
+#board td.row1 {
     border-bottom: 0px;
 }
-td.row3 {
+#board td.row3 {
     border-top: 0px;
 }
+#score {
+    table-layout: fixed;
+}
+#score td {
+    width: 50px;;
+}
+
+
