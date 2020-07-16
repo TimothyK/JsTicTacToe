@@ -2,8 +2,8 @@ loadEventListeners();
 
 
 class UI {
-
-    static cells = Array.from(document.getElementById('board').querySelectorAll('td'));
+    static board = document.getElementById('board');
+    static cells = Array.from(this.board.querySelectorAll('td'));
 
     static clearBoard() {
         this.cells.forEach(function(cell) {
@@ -40,14 +40,13 @@ class UI {
         scoreBox.innerText = value + 1;   
     }
 
+    static btnPlayAgain = document.getElementById('btnPlayAgain');
     static showPlayAgain() {
-        const btn = document.getElementById('btnPlayAgain');
-        btn.style.display = "inline";
-        btn.focus();
+        btnPlayAgain.style.display = "inline";
+        btnPlayAgain.focus();
     }
     static hidePlayAgain() {
-        const btn = document.getElementById('btnPlayAgain');
-        btn.style.display = "none";
+        btnPlayAgain.style.display = "none";
     }
 
     static setInstruction(message) {
@@ -66,7 +65,7 @@ class Line {
         this.cells = Array.from(cells);
     }
 
-    hasWinner() {
+    issWinner() {
         const tokens = this.cells
             .filter(cell => !cell.classList.contains('open-cell'))
             .map(cell => cell.innerText);
@@ -79,7 +78,7 @@ class Line {
     }
 
     winningPlayerToken() {
-        if (this.hasWinner())
+        if (this.issWinner())
             return this.cells[0].innerText;
     }
 
@@ -88,14 +87,35 @@ class Line {
 class Game {
     static playerX = new Player('X');
     static playerO = new Player('O');
+    static currentPlayer = this.playerO;
+    static switchPlayer() {
+        if (this.currentPlayer === this.playerX)
+            this.currentPlayer = this.playerO;
+        else
+            this.currentPlayer = this.playerX;
+
+        UI.setInstruction("It is player " + this.currentPlayer.token + "'s turn.");
+    }
 
     static startGame() {
         UI.hidePlayAgain();
         UI.clearBoard();
         this.switchPlayer();
-        this.switchPlayer();
     }
 
+    static selectCell(cell) {
+        UI.markCell(cell, this.currentPlayer);  
+        
+        if (this.isGameOver()) {
+            if (this.isDraw())
+                UI.reportDraw();
+            else
+                UI.reportWinner(this.winningLine());
+        }
+        else {
+            this.switchPlayer();
+        }
+    }
     static lines = [
         new Line(document.querySelectorAll('.col1')),
         new Line(document.querySelectorAll('.col2')),
@@ -107,22 +127,8 @@ class Game {
         new Line([document.getElementById('cell1'), document.getElementById('cell5'), document.getElementById('cell9')])
     ]
 
-    static currentPlayer = this.playerX;
-
-    static selectCell(cell) {
-        UI.markCell(cell, this.currentPlayer);  
-        this.switchPlayer();
-
-        if (this.isGameOver()) {
-            if (this.isDraw())
-                UI.reportDraw();
-            else
-                UI.reportWinner(this.winningLine());
-        }
-    }
-
     static winningLine() {
-        return this.lines.filter(line => line.hasWinner())[0] || null;
+        return this.lines.filter(line => line.issWinner())[0] || null;
     }
 
     static isGameOver() {
@@ -131,18 +137,8 @@ class Game {
     }
 
     static isDraw() {
-        return this.isGameOver() && !this.winningLine();
+        return this.isGameOver() && this.winningLine() === null;
     }
-
-    static switchPlayer() {
-        if (this.currentPlayer === this.playerX)
-            this.currentPlayer = this.playerO;
-        else
-            this.currentPlayer = this.playerX;
-
-        UI.setInstruction("It is player " + this.currentPlayer.token + "'s turn.");
-    }
-
 
 }
 
