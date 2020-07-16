@@ -1,34 +1,70 @@
 loadEventListeners();
 
+class Cell {
+    constructor(cell) {
+        this._cell = cell;
+
+        for(let i = 1; i <= 3; i++) {
+            if (cell.classList.contains('col' + i))
+                this.column = i;
+            if (cell.classList.contains('row' + i))
+                this.row = i;
+        }
+        this.id = cell.id;
+        this.position = parseInt(cell.id.slice(-1));        
+    }
+
+    isOpen() {
+        return this._cell.classList.contains('open-cell');
+    }
+
+    mark(player) {
+        this._cell.classList.remove('open-cell');
+        this._cell.innerText = player.token;
+        this._player = player;
+    }
+
+    getPlayer() {
+        return this._player;
+    }
+
+    markAsWinner() {
+        this._cell.classList.add('winning-cell');
+    }
+    markAsUnavailable() {
+        this._cell.classList.remove('open-cell');
+    }
+
+    clear(player) {
+        this._cell.classList.add('open-cell');
+        this._cell.classList.remove('winning-cell');
+        this._cell.innerHTML = '&nbsp;';
+        this._player = undefined;
+    }    
+}
 
 class UI {
     static board = document.getElementById('board');
-    static cells = Array.from(this.board.querySelectorAll('td'));
+    static cells = Array.from(this.board.querySelectorAll('td')).map(cell => new Cell(cell));
 
     static clearBoard() {
         this.cells.forEach(function(cell) {
-            cell.innerHTML = '&nbsp;';
-            cell.classList.add('open-cell');
-            cell.classList.remove('winning-cell');
+            cell.clear();
         })
-    }
-
-    static markCell(cell, player) {
-        cell.classList.remove('open-cell');
-        cell.innerText = player.token;
     }
 
     static reportDraw() {
         UI.setInstruction('The game is a draw');
-        UI.incrementScore('draw');
+        UI.incrementDrawCount();
         UI.showPlayAgain();
     }
 
     static reportWinner(winningLine) {
-        winningLine.cells.forEach(cell => cell.classList.add('winning-cell'));
-        this.cells.forEach(cell => cell.classList.remove('open-cell'));
-        UI.setInstruction('Player ' + winningLine.winningPlayerToken() + ' won.');
-        UI.incrementScore(winningLine.winningPlayerToken());
+        winningLine.cells.forEach(cell => cell.markAsWinner());
+        this.cells.forEach(cell => cell.markAsUnavailable());
+        const player = winningLine.winningPlayer();
+        UI.setInstruction('Player ' + player.token + ' won.');
+        player.incrementScore();
         UI.showPlayAgain();
     }
 
@@ -52,34 +88,47 @@ class UI {
     static setInstruction(message) {
         document.getElementById("quickHelp").innerText = message;
     }
+
+    static _drawCount = 0;
+    static incrementDrawCount() {
+        this._drawCount++;
+        document.getElementById('score-draw').innerText = this._drawCount;
+    }
 }
 
 class Player {
     constructor(token) {
         this.token = token;
+        this._score = 0;
+    }
+    
+    incrementScore() {
+        this._score++;
+        document.getElementById('score-' + this.token.toLowerCase()).innerText = this._score;
     }
 }
+
 
 class Line {
     constructor(cells) {
         this.cells = Array.from(cells);
     }
 
-    issWinner() {
-        const tokens = this.cells
-            .filter(cell => !cell.classList.contains('open-cell'))
-            .map(cell => cell.innerText);
+    isWinner() {
+        const players = this.cells
+            .filter(cell => !cell.isOpen())
+            .map(cell => cell.getPlayer());
 
-        if (tokens.length < this.cells.length)
+        if (players.length < this.cells.length)
             return false;
 
-        const firstToken = tokens[0];
-        return tokens.every(x => x === firstToken);
+        const firstPlayer = players[0];
+        return players.every(x => x === firstPlayer);
     }
 
-    winningPlayerToken() {
-        if (this.issWinner())
-            return this.cells[0].innerText;
+    winningPlayer() {
+        if (this.isWinner())
+            return this.cells[0].getPlayer();
     }
 
 }
@@ -104,8 +153,8 @@ class Game {
     }
 
     static selectCell(cell) {
-        UI.markCell(cell, this.currentPlayer);  
-        
+        cell.mark(this.currentPlayer);
+
         if (this.isGameOver()) {
             if (this.isDraw())
                 UI.reportDraw();
@@ -116,23 +165,24 @@ class Game {
             this.switchPlayer();
         }
     }
-    static lines = [
-        new Line(document.querySelectorAll('.col1')),
-        new Line(document.querySelectorAll('.col2')),
-        new Line(document.querySelectorAll('.col3')),
-        new Line(document.querySelectorAll('.row1')),
-        new Line(document.querySelectorAll('.row2')),
-        new Line(document.querySelectorAll('.row3')),
-        new Line([document.getElementById('cell7'), document.getElementById('cell5'), document.getElementById('cell3')]),
-        new Line([document.getElementById('cell1'), document.getElementById('cell5'), document.getElementById('cell9')])
+    
+    static _lines = [
+        new Line(UI.cells.filter(cell => cell.column === 1)),
+        new Line(UI.cells.filter(cell => cell.column === 2)),
+        new Line(UI.cells.filter(cell => cell.column === 3)),
+        new Line(UI.cells.filter(cell => cell.row === 1)),
+        new Line(UI.cells.filter(cell => cell.row === 2)),
+        new Line(UI.cells.filter(cell => cell.row === 3)),
+        new Line(UI.cells.filter(cell => [7,5,3].includes(cell.position))),
+        new Line(UI.cells.filter(cell => [1,5,9].includes(cell.position)))
     ]
 
     static winningLine() {
-        return this.lines.filter(line => line.issWinner())[0] || null;
+        return this._lines.filter(line => line.isWinner())[0] || null;
     }
 
     static isGameOver() {
-        const emptyCells = UI.cells.filter(cell => cell.classList.contains('open-cell'));
+        const emptyCells = UI.cells.filter(cell => cell.isOpen());
         return emptyCells.length === 0 || this.winningLine() !== null;
     }
 
@@ -151,7 +201,8 @@ function loadEventListeners() {
 
 function select(e) {    
     if (e.target.classList.contains('open-cell')){
-        Game.selectCell(e.target);
+        cell = UI.cells.filter(x => x.id === e.target.id)[0];
+        Game.selectCell(cell);
     }
 }
 
@@ -160,3 +211,4 @@ function playAgain() {
 }
 
 Game.startGame();
+
