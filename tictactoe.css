@@ -33,13 +33,13 @@ body {
 #board td.col1 {
     border-left: 0px;
 }
-#board td.col3 {
+#board td.col4 {
     border-right: 0px;
 }
 #board td.row1 {
     border-bottom: 0px;
 }
-#board td.row3 {
+#board td.row4 {
     border-top: 0px;
 }
 #score {

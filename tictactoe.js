@@ -2,14 +2,14 @@ class Cell {
     constructor(cell) {
         this._cell = cell;
 
-        for(let i = 1; i <= 3; i++) {
+        for(let i = 1; i <= 4; i++) {
             if (cell.classList.contains('col' + i))
                 this.column = i;
             if (cell.classList.contains('row' + i))
                 this.row = i;
         }
         this.id = cell.id;
-        this.position = parseInt(cell.id.slice(-1));        
+        this.position = cell.id.slice(-1);
     }
 
     isOpen() {
@@ -73,11 +73,13 @@ class GameBoard {
         new Line(this.cells.filter(cell => cell.column === 1)),
         new Line(this.cells.filter(cell => cell.column === 2)),
         new Line(this.cells.filter(cell => cell.column === 3)),
+        new Line(this.cells.filter(cell => cell.column === 4)),
         new Line(this.cells.filter(cell => cell.row === 1)),
         new Line(this.cells.filter(cell => cell.row === 2)),
         new Line(this.cells.filter(cell => cell.row === 3)),
-        new Line(this.cells.filter(cell => [7,5,3].includes(cell.position))),
-        new Line(this.cells.filter(cell => [1,5,9].includes(cell.position)))
+        new Line(this.cells.filter(cell => cell.row === 4)),
+        new Line(this.cells.filter(cell => ['C','9','6','3'].includes(cell.position))),
+        new Line(this.cells.filter(cell => ['0','5','A','F'].includes(cell.position)))
     ]
     
     static clear() {
@@ -158,10 +160,13 @@ class ScoreBoard {
 class Game {
     static playerX = new Player('X');
     static playerO = new Player('O');
-    static currentPlayer = this.playerO;
+    static playerHappy = new Player('😃');
+    static currentPlayer;
     static switchPlayer() {
         if (this.currentPlayer === this.playerX)
             this.currentPlayer = this.playerO;
+        else if (this.currentPlayer === this.playerO)
+            this.currentPlayer = this.playerHappy;
         else
             this.currentPlayer = this.playerX;
 
