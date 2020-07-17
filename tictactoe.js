@@ -66,9 +66,8 @@ class Line {
 
 
 class GameBoard {
-    static cells = Array.from(
-            document.getElementById('board').querySelectorAll('td')
-        ).map(cell => new Cell(cell));
+    static _root = document.getElementById('board');
+    static cells = Array.from(this._root.querySelectorAll('td')).map(cell => new Cell(cell));
 
     static lines = [
         new Line(this.cells.filter(cell => cell.column === 1)),
@@ -82,9 +81,7 @@ class GameBoard {
     ]
     
     static clear() {
-        this.cells.forEach(function(cell) {
-            cell.clear();
-        })
+        this.cells.forEach(cell => cell.clear());
     }
 
     static deactivate() {
@@ -95,7 +92,15 @@ class GameBoard {
         winningLine.cells.forEach(cell => cell.markAsWinner());
     }
 
+    static findCellById(id) {
+        return this.cells.filter(x => x.id === id)[0] || null;
+    }
 }
+GameBoard._root.addEventListener('click', e => {
+    const cell = GameBoard.findCellById(e.target.id);
+    if (cell !== null)
+        Game.onCellClick(cell)
+});
 
 class Player {
     constructor(token) {
@@ -105,15 +110,16 @@ class Player {
 }
 
 class btnPlayAgain {
-    static _btnPlayAgain = document.getElementById('btnPlayAgain');
+    static _root = document.getElementById('btnPlayAgain');
     static show() {
-        this._btnPlayAgain.style.display = "inline";
-        this._btnPlayAgain.focus();
+        this._root.style.display = "inline";
+        this._root.focus();
     }
     static hide() {
-        this._btnPlayAgain.style.display = "none";
+        this._root.style.display = "none";
     }    
 }
+btnPlayAgain._root.addEventListener('click', e => Game.startGame());
 
 class Instructions {
     static _setInstruction(message) {
@@ -167,6 +173,11 @@ class Game {
         this.switchPlayer();
     }
 
+    static onCellClick(cell) {
+        if (cell.isOpen())
+            this.selectCell(cell);
+    }
+
     static selectCell(cell) {
         cell.mark(this.currentPlayer);
 
@@ -208,24 +219,5 @@ class Game {
     }
 }
 
-
-
-function loadEventListeners() {
-    document.getElementById('board').addEventListener('click', select);
-    document.getElementById('btnPlayAgain').addEventListener('click', playAgain);
-}
-
-function select(e) {    
-    if (e.target.classList.contains('open-cell')){
-        cell = GameBoard.cells.filter(x => x.id === e.target.id)[0];
-        Game.selectCell(cell);
-    }
-}
-
-function playAgain() {
-    Game.startGame();
-}
-
-loadEventListeners();
 Game.startGame();
 
