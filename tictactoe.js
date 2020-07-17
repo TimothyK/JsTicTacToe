@@ -1,5 +1,3 @@
-loadEventListeners();
-
 class Cell {
     constructor(cell) {
         this._cell = cell;
@@ -43,72 +41,6 @@ class Cell {
     }    
 }
 
-class UI {
-    static board = document.getElementById('board');
-    static cells = Array.from(this.board.querySelectorAll('td')).map(cell => new Cell(cell));
-
-    static clearBoard() {
-        this.cells.forEach(function(cell) {
-            cell.clear();
-        })
-    }
-
-    static reportDraw() {
-        UI.setInstruction('The game is a draw');
-        UI.incrementDrawCount();
-        UI.showPlayAgain();
-    }
-
-    static reportWinner(winningLine) {
-        winningLine.cells.forEach(cell => cell.markAsWinner());
-        this.cells.forEach(cell => cell.markAsUnavailable());
-        const player = winningLine.winningPlayer();
-        UI.setInstruction('Player ' + player.token + ' won.');
-        player.incrementScore();
-        UI.showPlayAgain();
-    }
-
-    static incrementScore(idSuffix) {
-        const id = 'score-' + idSuffix.toLowerCase();
-        const scoreBox = document
-            .getElementById(id);
-        let value = parseInt(scoreBox.innerText);
-        scoreBox.innerText = value + 1;   
-    }
-
-    static btnPlayAgain = document.getElementById('btnPlayAgain');
-    static showPlayAgain() {
-        btnPlayAgain.style.display = "inline";
-        btnPlayAgain.focus();
-    }
-    static hidePlayAgain() {
-        btnPlayAgain.style.display = "none";
-    }
-
-    static setInstruction(message) {
-        document.getElementById("quickHelp").innerText = message;
-    }
-
-    static _drawCount = 0;
-    static incrementDrawCount() {
-        this._drawCount++;
-        document.getElementById('score-draw').innerText = this._drawCount;
-    }
-}
-
-class Player {
-    constructor(token) {
-        this.token = token;
-        this._score = 0;
-    }
-    
-    incrementScore() {
-        this._score++;
-        document.getElementById('score-' + this.token.toLowerCase()).innerText = this._score;
-    }
-}
-
-
 class Line {
     constructor(cells) {
         this.cells = Array.from(cells);
@@ -130,7 +62,91 @@ class Line {
         if (this.isWinner())
             return this.cells[0].getPlayer();
     }
+}
 
+
+class GameBoard {
+    static cells = Array.from(
+            document.getElementById('board').querySelectorAll('td')
+        ).map(cell => new Cell(cell));
+
+    static lines = [
+        new Line(this.cells.filter(cell => cell.column === 1)),
+        new Line(this.cells.filter(cell => cell.column === 2)),
+        new Line(this.cells.filter(cell => cell.column === 3)),
+        new Line(this.cells.filter(cell => cell.row === 1)),
+        new Line(this.cells.filter(cell => cell.row === 2)),
+        new Line(this.cells.filter(cell => cell.row === 3)),
+        new Line(this.cells.filter(cell => [7,5,3].includes(cell.position))),
+        new Line(this.cells.filter(cell => [1,5,9].includes(cell.position)))
+    ]
+    
+    static clear() {
+        this.cells.forEach(function(cell) {
+            cell.clear();
+        })
+    }
+
+    static deactivate() {
+        this.cells.forEach(cell => cell.markAsUnavailable());
+    }
+    
+    static highlightWinningLine(winningLine) {
+        winningLine.cells.forEach(cell => cell.markAsWinner());
+    }
+
+}
+
+class Player {
+    constructor(token) {
+        this.token = token;
+        this.score = 0;
+    }    
+}
+
+class btnPlayAgain {
+    static _btnPlayAgain = document.getElementById('btnPlayAgain');
+    static show() {
+        this._btnPlayAgain.style.display = "inline";
+        this._btnPlayAgain.focus();
+    }
+    static hide() {
+        this._btnPlayAgain.style.display = "none";
+    }    
+}
+
+class Instructions {
+    static _setInstruction(message) {
+        document.getElementById("quickHelp").innerText = message;
+    }
+
+    static gameOverDraw() {
+        this._setInstruction('The game is a draw');
+        btnPlayAgain.show();
+    }
+
+    static gameOverYouWin(player) {
+        this._setInstruction('Player ' + player.token + ' won.');
+        btnPlayAgain.show();
+    }
+
+    static itsYourTurn(player) {    
+        btnPlayAgain.hide();
+        this._setInstruction("It is player " + player.token + "'s turn.");
+    }
+}
+
+class ScoreBoard {
+    static _drawCount = 0;
+    static incrementDrawCount() {
+        this._drawCount++;
+        document.getElementById('score-draw').innerText = this._drawCount;
+    }
+
+    static incrementPlayerWins(player) {
+        player.score++;
+        document.getElementById('score-' + player.token.toLowerCase()).innerText = player.score;
+    }
 }
 
 class Game {
@@ -143,12 +159,11 @@ class Game {
         else
             this.currentPlayer = this.playerX;
 
-        UI.setInstruction("It is player " + this.currentPlayer.token + "'s turn.");
+        Instructions.itsYourTurn(this.currentPlayer);
     }
 
     static startGame() {
-        UI.hidePlayAgain();
-        UI.clearBoard();
+        GameBoard.clear();
         this.switchPlayer();
     }
 
@@ -157,32 +172,21 @@ class Game {
 
         if (this.isGameOver()) {
             if (this.isDraw())
-                UI.reportDraw();
+                this.reportDraw();
             else
-                UI.reportWinner(this.winningLine());
+                this.reportWinner(this.winningLine());
         }
         else {
             this.switchPlayer();
         }
     }
     
-    static _lines = [
-        new Line(UI.cells.filter(cell => cell.column === 1)),
-        new Line(UI.cells.filter(cell => cell.column === 2)),
-        new Line(UI.cells.filter(cell => cell.column === 3)),
-        new Line(UI.cells.filter(cell => cell.row === 1)),
-        new Line(UI.cells.filter(cell => cell.row === 2)),
-        new Line(UI.cells.filter(cell => cell.row === 3)),
-        new Line(UI.cells.filter(cell => [7,5,3].includes(cell.position))),
-        new Line(UI.cells.filter(cell => [1,5,9].includes(cell.position)))
-    ]
-
     static winningLine() {
-        return this._lines.filter(line => line.isWinner())[0] || null;
+        return GameBoard.lines.filter(line => line.isWinner())[0] || null;
     }
 
     static isGameOver() {
-        const emptyCells = UI.cells.filter(cell => cell.isOpen());
+        const emptyCells = GameBoard.cells.filter(cell => cell.isOpen());
         return emptyCells.length === 0 || this.winningLine() !== null;
     }
 
@@ -190,6 +194,18 @@ class Game {
         return this.isGameOver() && this.winningLine() === null;
     }
 
+    static reportDraw() {
+        Instructions.gameOverDraw();
+        ScoreBoard.incrementDrawCount();
+    }
+
+    static reportWinner(winningLine) {
+        GameBoard.deactivate();
+        GameBoard.highlightWinningLine(winningLine);        
+        const player = winningLine.winningPlayer();
+        Instructions.gameOverYouWin(player);
+        ScoreBoard.incrementPlayerWins(player);
+    }
 }
 
 
@@ -201,7 +217,7 @@ function loadEventListeners() {
 
 function select(e) {    
     if (e.target.classList.contains('open-cell')){
-        cell = UI.cells.filter(x => x.id === e.target.id)[0];
+        cell = GameBoard.cells.filter(x => x.id === e.target.id)[0];
         Game.selectCell(cell);
     }
 }
@@ -210,5 +226,6 @@ function playAgain() {
     Game.startGame();
 }
 
+loadEventListeners();
 Game.startGame();
 
